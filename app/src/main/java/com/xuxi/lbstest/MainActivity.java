@@ -15,6 +15,8 @@ import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
+import com.baidu.mapapi.SDKInitializer;
+import com.baidu.mapapi.map.MapView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,15 +27,20 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView positionText;
 
+    private MapView mapView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
 
         mLocationClient = new LocationClient(getApplicationContext());
         mLocationClient.registerNotifyLocationListener(new MyLocationListener());
-
+        SDKInitializer.initialize(getApplicationContext());
+        setContentView(R.layout.activity_main); //
+        mapView = findViewById(R.id.bmapView);
         positionText = findViewById(R.id.position_text_view);
+
+
         List<String> permissionList = new ArrayList<>();
         if (ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
             permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);
@@ -63,11 +70,6 @@ public class MainActivity extends AppCompatActivity {
         mLocationClient.setLocOption(option);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mLocationClient.stop();
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -123,4 +125,22 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapView.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mLocationClient.stop();
+        mapView.onDestroy();
+    }
 }
