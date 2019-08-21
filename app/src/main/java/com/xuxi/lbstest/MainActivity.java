@@ -16,7 +16,12 @@ import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
 import com.baidu.mapapi.SDKInitializer;
+import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.MapStatusUpdate;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.model.LatLng;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +34,10 @@ public class MainActivity extends AppCompatActivity {
 
     private MapView mapView;
 
+    private BaiduMap baiduMap;
+
+    private boolean isFirstLocate = true;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
         SDKInitializer.initialize(getApplicationContext());
         setContentView(R.layout.activity_main); //
         mapView = findViewById(R.id.bmapView);
+        baiduMap = mapView.getMap();
+        baiduMap.setMyLocationEnabled(true);
         positionText = findViewById(R.id.position_text_view);
 
 
@@ -65,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initLocation(){
         LocationClientOption option = new LocationClientOption();
+//        option.setCoorType("bd0911");
         option.setScanSpan(5000);
         option.setIsNeedAddress(true);
         mLocationClient.setLocOption(option);
@@ -96,9 +108,31 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
+    private void navigateTo(BDLocation location){
+        if (isFirstLocate){
+            LatLng ll = new LatLng(location.getLatitude(),location.getLongitude());
+            MapStatusUpdate update = MapStatusUpdateFactory.newLatLng(ll);
+            baiduMap.animateMapStatus(update);
+            update = MapStatusUpdateFactory.zoomTo(16f);
+            isFirstLocate = false;
+        }
+        MyLocationData.Builder locationBuilder = new MyLocationData.Builder();
+        locationBuilder.latitude(location.getLatitude());
+        locationBuilder.longitude(location.getLongitude());
+        MyLocationData locationData = locationBuilder.build();
+        baiduMap.setMyLocationData(locationData);
+
+    }
+
     public class MyLocationListener implements BDLocationListener{
         @Override
         public void onReceiveLocation(final BDLocation bdLocation) {
+
+            if (bdLocation.getLocType() == BDLocation.TypeGpsLocation || bdLocation.getLocType() == BDLocation.TypeNetWorkLocation){
+                navigateTo(bdLocation);
+            }
+
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
@@ -142,5 +176,9 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         mLocationClient.stop();
         mapView.onDestroy();
+        baiduMap.setMyLocationEnabled(false);
     }
+
+
+
 }
